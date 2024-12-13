@@ -8,6 +8,7 @@ from icecream import ic
 import csv
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+import time
 
 logging.basicConfig(level=logging.INFO)
 
@@ -70,6 +71,7 @@ def change_tickets_from_csv(csv_file_path):
     with open(csv_file_path, mode='r') as file:
         csv_reader = csv.reader(file)
         next(csv_reader) # Skip the header row
+        count = 0
         for row in csv_reader:
             ticket_id = row[0]  # Accessing the first column
             # logging.info(f"Updating ticket {ticket_id}")
@@ -85,9 +87,50 @@ def change_tickets_from_csv(csv_file_path):
                 logging.info(f"Successfully updated ticket {ticket_id}")
             else:
                 logging.error(f"Failed to update ticket {ticket_id}: {response.text}")
+            
+            count += 1 # API rate limiting - Well thats the plan anyway
+            if count % 100 == 0:
+                logging.info("Processed 100 tickets, now sleeping for 10 seconds to allow the server to catch up")
+                time.sleep(10)
+
+def delete_tickets_from_csv(csv_file_path):
+    token = retrieve_secrets()
+
+    
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+
+    with open(csv_file_path, mode='r') as file:
+        csv_reader = csv.reader(file)
+        next(csv_reader) # Skip the header row
+        
+        count = 0
+        for row in csv_reader:
+            ticket_id = row[0]  # Accessing the first column
+            url = f"https://synergy.halopsa.com/api/Tickets/{ticket_id}"
+            logging.info(f"Deleting ticket {ticket_id}")
+
+            response = requests.delete(url, headers=headers)
+
+            if response.status_code == 200:
+                logging.info(f"Successfully deleted ticket {ticket_id}")
+            else:
+                logging.error(f"Failed to delete ticket {ticket_id}")
+            
+            count += 1 # API rate limiting - Well thats the plan anyway
+            if count % 100 == 0:
+                logging.info("Processed 100 tickets, now sleeping for 10 seconds to allow the server to catch up")
+                time.sleep(10)
+
+
+
+
+
 
 
 if __name__ == "__main__":
-    csv_file_path = './crgh_finance.csv'
-    change_tickets_from_csv(csv_file_path)
+    csv_file_path = './ticketsToDelete.csv'
+    delete_tickets_from_csv(csv_file_path)
 
