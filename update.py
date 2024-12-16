@@ -37,7 +37,7 @@ def retrieve_secrets():
         raise Exception(status_code=500, detail="Failed to retrieve secrets from AWS Secrets Manager")
 
 def get_token():
-    """Get OAuth token from Halo."""
+    """Get OAuth token from Halo, this function is needed as when doing bulk updates the token expires and needs to be refreshed. retrieve_secrets() is used to get the token from AWS Secrets Manager but that is only used when the token is first retrieved."""
     url = "https://synergy.halopsa.com/auth/Token"
     client_id = config("HALO_CLIENT_ID")
     client_secret = config("HALO_CLIENT_SECRET")
