@@ -53,8 +53,6 @@ def get_token():
         logging.error(f"Failed to get token: {response.status_code} - {response.text}")
         return None
 
-
-
 def get_ticket(ticket_id):
     token = retrieve_secrets()
 
@@ -136,10 +134,10 @@ def change_tickets_from_csv(csv_file_path):
             else:
                 logging.error(f"Failed to update ticket {ticket_id}: {response.status_code} - {response.text}")
             
-            count += 1 # API rate limiting - Well thats the plan anyway
-            if count % 100 == 0:
-                logging.info("Processed 100 tickets, retreiving new token")
-                # time.sleep(20)
+            count += 1 # API rate limiting - 700 requests per 5 minutes rolling window
+            if count % 650 == 0:
+                logging.info("Processed 650 tickets, sleeping for 5 mins then retreiving new token")
+                time.sleep(300)
                 token = get_token()
 
 def delete_tickets_from_csv(csv_file_path):
@@ -180,7 +178,7 @@ def delete_tickets_from_csv(csv_file_path):
 
 
 if __name__ == "__main__":
-    # csv_file_path = './tickets.csv'
-    # change_tickets_from_csv(csv_file_path)
-    get_token()
+    csv_file_path = './tickets.csv'
+    change_tickets_from_csv(csv_file_path)
+
 
