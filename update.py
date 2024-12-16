@@ -36,9 +36,38 @@ def retrieve_secrets():
         logging.error(f"ClientError retrieving secrets: {e}")
         raise Exception(status_code=500, detail="Failed to retrieve secrets from AWS Secrets Manager")
 
+
+def get_ticket(ticket_id):
+    token = retrieve_secrets()
+
+    url = f"https://synergy.halopsa.com/api/Tickets/{ticket_id}"
+    
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+
+    params = {
+        "ticketidonly": True,
+        "includedetails": False
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 200:
+        logging.info("Successfully received ticket")
+        # ic(response.headers.get("X-RateLimit-Limit"))
+        # ic(response.headers.get("X-RateLimit-Remaining"))
+        # ic(response.headers.get("X-RateLimit-Reset"))
+        ic(response.json())
+    
+    else:
+        logging.error(f"Failed to get ticket: {response.status_code} - {response.text}")
+        return response.status_code, response.text
+
 def change_ticket_to_unbillable(ticket_id):
-    secrets = retrieve_secrets()
-    token = secrets['access_token']
+    token = retrieve_secrets()
+    
     url = "https://synergy.halopsa.com/api/Tickets"
     
     headers = {
@@ -86,7 +115,7 @@ def change_tickets_from_csv(csv_file_path):
             if response.status_code == 201:
                 logging.info(f"Successfully updated ticket {ticket_id}")
             else:
-                logging.error(f"Failed to update ticket {ticket_id}: {response.text}")
+                logging.error(f"Failed to update ticket {ticket_id}: {response.status_code} - {response.text}")
             
             count += 1 # API rate limiting - Well thats the plan anyway
             if count % 100 == 0:
@@ -120,7 +149,7 @@ def delete_tickets_from_csv(csv_file_path):
                 logging.error(f"Failed to delete ticket {ticket_id}")
             
             count += 1 # API rate limiting - Well thats the plan anyway
-            if count % 100 == 0:
+            if count % 30 == 0:
                 logging.info("Processed 100 tickets, now sleeping for 10 seconds to allow the server to catch up")
                 time.sleep(10)
 
@@ -131,6 +160,6 @@ def delete_tickets_from_csv(csv_file_path):
 
 
 if __name__ == "__main__":
-    csv_file_path = './ticketsToDelete.csv'
-    delete_tickets_from_csv(csv_file_path)
-
+    # csv_file_path = './ticketsToDelete.csv'
+    # delete_tickets_from_csv(csv_file_path)
+    get_ticket(332800)
