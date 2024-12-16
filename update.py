@@ -36,6 +36,24 @@ def retrieve_secrets():
         logging.error(f"ClientError retrieving secrets: {e}")
         raise Exception(status_code=500, detail="Failed to retrieve secrets from AWS Secrets Manager")
 
+def get_token():
+    """Get OAuth token from Halo."""
+    url = "https://synergy.halopsa.com/auth/Token"
+    client_id = config("HALO_CLIENT_ID")
+    client_secret = config("HALO_CLIENT_SECRET")
+    response = requests.post(
+        url,
+        data={"grant_type": "client_credentials", "scope": "all"},
+        auth=HTTPBasicAuth(client_id, client_secret)
+    )
+    if response.status_code == 200:
+        logging.info("Successfully received token")
+        return response.json()["access_token"]
+    else:
+        logging.error(f"Failed to get token: {response.status_code} - {response.text}")
+        return None
+
+
 
 def get_ticket(ticket_id):
     token = retrieve_secrets()
@@ -88,7 +106,7 @@ def change_ticket_to_unbillable(ticket_id):
         logging.error(f"Failed to update ticket: {response.text}")
 
 def change_tickets_from_csv(csv_file_path):
-    token = retrieve_secrets()
+    token = get_token()
 
     url = "https://synergy.halopsa.com/api/Tickets"
     
@@ -122,7 +140,7 @@ def change_tickets_from_csv(csv_file_path):
             if count % 100 == 0:
                 logging.info("Processed 100 tickets, now sleeping for 20 seconds to allow the server to catch up")
                 time.sleep(20)
-                token = retrieve_secrets()
+                token = get_token()
 
 def delete_tickets_from_csv(csv_file_path):
     token = retrieve_secrets()
@@ -162,6 +180,7 @@ def delete_tickets_from_csv(csv_file_path):
 
 
 if __name__ == "__main__":
-    csv_file_path = './tickets.csv'
-    change_tickets_from_csv(csv_file_path)
+    # csv_file_path = './tickets.csv'
+    # change_tickets_from_csv(csv_file_path)
+    get_token()
 
