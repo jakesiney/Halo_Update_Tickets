@@ -138,8 +138,8 @@ def change_tickets_from_csv(csv_file_path):
             
             count += 1 # API rate limiting - Well thats the plan anyway
             if count % 100 == 0:
-                logging.info("Processed 100 tickets, now sleeping for 20 seconds to allow the server to catch up")
-                time.sleep(20)
+                logging.info("Processed 100 tickets, retreiving new token")
+                # time.sleep(20)
                 token = get_token()
 
 def delete_tickets_from_csv(csv_file_path):
